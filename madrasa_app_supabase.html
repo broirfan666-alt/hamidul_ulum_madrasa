@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>হামিদুল উলূম মাদ্রাসা</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{--bg1:#a9b98a;--bg2:#c3cf9f;--text:#141414;--card:rgba(255,255,255,0.1);--accent:#2f8fe0;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:"Noto Sans Bengali","Segoe UI",sans-serif;
+  background:radial-gradient(circle at 30% 0%,var(--bg2),var(--bg1));min-height:100vh;
+  display:flex;justify-content:center;padding:20px 10px 40px;color:var(--text);}
+.wrap{width:100%;max-width:420px;}
+.glass{background:rgba(255,255,255,0.14);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.35);
+  border-radius:18px;box-shadow:0 4px 14px rgba(0,0,0,0.15);}
+.phone{padding:16px;min-height:600px;position:relative;}
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px;}
+.avatar{width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.brand{flex:1;text-align:center;font-weight:900;padding:8px;font-size:14px;}
+.iconbtn{width:38px;height:38px;border-radius:12px;flex:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;}
+.title-pill{text-align:center;font-weight:800;font-size:16px;padding:9px;margin-bottom:12px;}
+.backbtn{width:32px;height:32px;border-radius:50%;cursor:pointer;font-weight:900;border:none;background:rgba(255,255,255,0.2);margin-bottom:8px;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.menucard{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 6px;border-radius:16px;
+  background:var(--card);cursor:pointer;}
+.icon-circle{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:22px;}
+.panel{background:rgba(120,125,90,0.4);border-radius:16px;padding:12px;min-height:300px;}
+.item-row{background:var(--card);border-radius:12px;padding:9px;margin-bottom:8px;display:flex;justify-content:space-between;gap:8px;align-items:center;}
+.field{margin-bottom:9px;} .field label{font-size:11.5px;font-weight:800;display:block;margin-bottom:3px;}
+input,select,textarea{width:100%;border-radius:10px;border:1px solid rgba(0,0,0,0.3);padding:8px;font-family:inherit;font-size:12.5px;background:rgba(255,255,255,0.75);}
+.btn{padding:9px 14px;border:none;border-radius:14px;font-weight:800;font-size:13px;cursor:pointer;background:rgba(255,255,255,0.25);}
+.btn-primary{background:var(--accent);color:#fff;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th,td{border:1px solid rgba(0,0,0,0.3);padding:6px 3px;text-align:center;}
+.section-h{font-weight:900;font-size:12.5px;margin:10px 0 6px;}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:30;padding:16px;}
+.overlay.hide{display:none;}
+.modal{width:100%;max-width:340px;padding:20px;}
+.msg{font-size:12px;text-align:center;margin-top:8px;min-height:16px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div id="authScreen" class="overlay">
+  <div class="modal glass">
+    <div style="font-size:40px;text-align:center;">🕌</div>
+    <h2 style="text-align:center;margin:6px 0;">হামিদুল উলূম মাদ্রাসা</h2>
+    <div class="field"><label>ইমেইল</label><input id="authEmail" type="email"></div>
+    <div class="field"><label>পাসওয়ার্ড</label><input id="authPass" type="password"></div>
+    <div class="field"><label>পূর্ণ নাম (শুধু নতুন আইডির জন্য)</label><input id="authName" type="text"></div>
+    <button class="btn btn-primary" style="width:100%;" onclick="doSignIn()">লগইন করুন</button>
+    <button class="btn" style="width:100%;margin-top:8px;" onclick="doSignUp()">নতুন আইডি তৈরি করুন</button>
+    <div class="msg" id="authMsg"></div>
+  </div>
+</div>
+
+<div class="phone glass" id="app" style="display:none;">
+  <div class="toolbar">
+    <div class="avatar glass" id="roleBadge">🕌</div>
+    <div class="brand glass">হামিদুল উলূম মাদ্রাসা</div>
+    <div class="iconbtn glass" onclick="doSignOut()">🚪</div>
+  </div>
+  <button class="backbtn" id="backBtn" style="display:none;" onclick="goHome()">←</button>
+  <div class="title-pill glass" id="titlePill">হোম</div>
+  <div id="content">লোড হচ্ছে...</div>
+</div>
+
+</div>
+<script>
+const sb = supabase.createClient(
+  "https://viebdkvcnrhlogoghlnc.supabase.co",
+  "sb_publishable_RFgqh8KpqTamA1ozPy0Maw_k3X2jZg3"
+);
+let profile = null, current = "home";
+
+async function doSignUp(){
+  const email=document.getElementById("authEmail").value.trim();
+  const password=document.getElementById("authPass").value;
+  const full_name=document.getElementById("authName").value.trim();
+  const {data,error} = await sb.auth.signUp({email,password});
+  if(error){ msg(error.message); return; }
+  if(data.user && full_name){ await sb.from("profiles").update({full_name}).eq("id",data.user.id); }
+  msg("আইডি তৈরি হয়েছে। এখন লগইন করুন (ইমেইল ভেরিফাই করতে হতে পারে)।");
+}
+async function doSignIn(){
+  const email=document.getElementById("authEmail").value.trim();
+  const password=document.getElementById("authPass").value;
+  const {error} = await sb.auth.signInWithPassword({email,password});
+  if(error){ msg(error.message); return; }
+  await afterLogin();
+}
+async function doSignOut(){ await sb.auth.signOut(); location.reload(); }
+function msg(t){ document.getElementById("authMsg").textContent = t; }
+
+async function afterLogin(){
+  const {data:{user}} = await sb.auth.getUser();
+  const {data:p} = await sb.from("profiles").select("*").eq("id",user.id).single();
+  profile = p;
+  document.getElementById("authScreen").classList.add("hide");
+  document.getElementById("app").style.display = "block";
+  document.getElementById("roleBadge").textContent = profile.role==="admin" ? "🛡️" : "🕌";
+  render();
+}
+sb.auth.onAuthStateChange((event, session)=>{ if(session) afterLogin(); });
+sb.auth.getSession().then(({data:{session}})=>{ if(session) afterLogin(); });
+
+const menu = [
+  {id:"rules",icon:"📜",label:"নিয়ম কানুন"}, {id:"admission",icon:"📝",label:"ভর্তি আবেদন"},
+  {id:"salary",icon:"💰",label:"মাসিক বেতন"}, {id:"complaints",icon:"📢",label:"অভিযোগ কেন্দ্র"},
+  {id:"total",icon:"👥",label:"মোট ছাত্র সংখ্যা"}, {id:"notice",icon:"🔔",label:"জরুরী নোটিশ"},
+  {id:"result",icon:"📊",label:"পরীক্ষার ফলাফল"}
+];
+const titles = {rules:"নিয়ম কানুন",admission:"ভর্তি আবেদন",salary:"মাসিক বেতন",complaints:"অভিযোগ কেন্দ্র",
+  total:"মোট ছাত্র সংখ্যা",notice:"জরুরী নোটিশ",result:"পরীক্ষার ফলাফল"};
+
+function esc(s){return (s||"").toString().replace(/</g,"&lt;");}
+function openScreen(id){ current=id; render(); }
+function goHome(){ current="home"; render(); }
+
+async function render(){
+  const c = document.getElementById("content");
+  document.getElementById("backBtn").style.display = current==="home" ? "none":"inline-flex";
+  document.getElementById("titlePill").textContent = current==="home" ? "হোম" : titles[current] + (profile.role==="admin"?" (এডমিন)":"");
+  c.innerHTML = "লোড হচ্ছে...";
+  if(current==="home") return renderHome(c);
+  if(current==="rules") return renderRules(c);
+  if(current==="admission") return renderAdmission(c);
+  if(current==="salary") return renderSalary(c);
+  if(current==="complaints") return renderComplaints(c);
+  if(current==="total") return renderTotal(c);
+  if(current==="notice") return renderNotice(c);
+  if(current==="result") return renderResult(c);
+}
+
+async function renderHome(c){
+  let html = "";
+  if(profile.role==="admin"){
+    const {data:deps} = await sb.from("departments").select("*");
+    const total = (deps||[]).reduce((a,d)=>a+d.student_count,0);
+    const {data:sal} = await sb.from("salary_payments").select("status");
+    const approved = (sal||[]).filter(s=>s.status==="approved").length;
+    const pct = sal && sal.length ? Math.round(approved/sal.length*100) : 0;
+    html += `<div class="item-row glass"><div>মোট ছাত্র: <b>${total}</b> জন — এই মাসে বেতন পরিশোধ: <b>${pct}%</b></div></div>`;
+  }
+  html += '<div class="grid">';
+  menu.forEach(m=>{ html+=`<div class="menucard glass" onclick="openScreen('${m.id}')"><div class="icon-circle">${m.icon}</div><div>${m.label}</div></div>`; });
+  html += '</div>';
+  c.innerHTML = html;
+}
+
+async function renderRules(c){
+  const {data} = await sb.from("rules").select("*").order("position");
+  let html = '<div class="panel">';
+  (data||[]).forEach((r,i)=>{ html+=`<div class="item-row"><div>${i+1}. ${esc(r.content)}</div></div>`; });
+  if(profile.role==="admin"){
+    html += `<div class="field"><label>নতুন নিয়ম</label><input id="newRule" onkeypress="if(event.key==='Enter')addRule()"></div>
+      <button class="btn btn-primary" onclick="addRule()">➕ যোগ করুন</button>`;
+  }
+  html += '</div>'; c.innerHTML = html;
+}
+async function addRule(){
+  const v = document.getElementById("newRule").value.trim(); if(!v) return;
+  await sb.from("rules").insert({content:v}); render();
+}
+
+async function renderNotice(c){
+  const {data} = await sb.from("notices").select("*").eq("id",1).single();
+  if(profile.role==="admin"){
+    c.innerHTML = `<div class="panel"><textarea id="noticeTxt" rows="8">${esc(data?.content)}</textarea>
+      <button class="btn btn-primary" style="margin-top:8px;" onclick="saveNotice()">💾 সংরক্ষণ করুন</button></div>`;
+  } else {
+    c.innerHTML = `<div class="panel"><div class="item-row" style="white-space:pre-wrap;">${esc(data?.content)}</div></div>`;
+  }
+}
+async function saveNotice(){
+  const v = document.getElementById("noticeTxt").value;
+  await sb.from("notices").update({content:v, updated_at:new Date()}).eq("id",1); render();
+}
+
+async function renderTotal(c){
+  const {data} = await sb.from("departments").select("*");
+  let html='<div class="panel">';
+  (data||[]).forEach(d=>{
+    html += `<div class="item-row"><div>${esc(d.name)} বিভাগ</div>
+      ${profile.role==="admin" ? `<input type="number" style="width:70px;" value="${d.student_count}" onchange="updDept(${d.id},this.value)">`
+      : `<b>${d.student_count}</b> জন`}</div>`;
+  });
+  html+='</div>'; c.innerHTML=html;
+}
+async function updDept(id,val){ await sb.from("departments").update({student_count:parseInt(val)||0}).eq("id",id); }
+
+async function renderComplaints(c){
+  if(profile.role==="admin"){
+    const {data} = await sb.from("complaints").select("*").order("created_at",{ascending:false});
+    let html='<div class="panel">';
+    (data||[]).forEach(x=>{ html+=`<div class="item-row"><div>${esc(x.content)}</div></div>`; });
+    html+='</div>'; c.innerHTML=html;
+  } else {
+    c.innerHTML = `<div class="panel"><div class="field"><label>আপনার অভিযোগ লিখুন</label>
+      <textarea id="compTxt" rows="4"></textarea></div>
+      <button class="btn btn-primary" onclick="sendComplaint()">📩 জমা দিন</button>
+      <div class="msg" id="compMsg"></div></div>`;
+  }
+}
+async function sendComplaint(){
+  const v=document.getElementById("compTxt").value.trim(); if(!v) return;
+  const {data:{user}} = await sb.auth.getUser();
+  await sb.from("complaints").insert({content:v,user_id:user.id});
+  document.getElementById("compMsg").textContent="জমা হয়েছে, ধন্যবাদ।";
+}
+
+async function renderSalary(c){
+  const {data:{user}} = await sb.auth.getUser();
+  const q = profile.role==="admin" ? sb.from("salary_payments").select("*") : sb.from("salary_payments").select("*").eq("user_id",user.id);
+  const {data} = await q.order("created_at",{ascending:false});
+  let html='<div class="panel">';
+  (data||[]).forEach(s=>{
+    html += `<div class="item-row"><div>${esc(s.student_name||"")} — ${esc(s.month)} : ${s.status==="approved"?"✅ পরিশোধিত":"⏳ অপেক্ষমাণ"}</div>
+      ${profile.role==="admin" && s.status!=="approved" ? `<button class="btn" onclick="approveSalary(${s.id})">Approve</button>` : ""}</div>`;
+  });
+  if(profile.role!=="admin"){
+    html += `<div class="field"><label>ছাত্রের নাম</label><input id="salName"></div>
+      <div class="field"><label>মাস</label><input id="salMonth" placeholder="যেমন: সেপ্টেম্বর"></div>
+      <button class="btn btn-primary" onclick="requestSalary()">পরিশোধ করেছি জানান</button>`;
+  }
+  html+='</div>'; c.innerHTML=html;
+}
+async function requestSalary(){
+  const {data:{user}} = await sb.auth.getUser();
+  const student_name=document.getElementById("salName").value.trim();
+  const month=document.getElementById("salMonth").value.trim();
+  if(!month) return;
+  await sb.from("salary_payments").insert({user_id:user.id,student_name,month}); render();
+}
+async function approveSalary(id){ await sb.from("salary_payments").update({status:"approved",paid_at:new Date()}).eq("id",id); render(); }
+
+async function renderResult(c){
+  const {data:deps} = await sb.from("departments").select("name");
+  let html = `<div class="panel"><div class="field"><label>বিভাগ নির্বাচন করুন</label>
+    <select id="resDept" onchange="loadResult(this.value)"><option value="">বিভাগ নির্বাচন করুন</option>
+    ${(deps||[]).map(d=>`<option value="${d.name}">${d.name}</option>`).join("")}</select></div>
+    <div id="resultBody"></div>`;
+  if(profile.role==="admin"){
+    html += `<div class="field"><label>নাম</label><input id="rName"></div>
+      <div class="field"><label>তিলাওয়াত</label><input id="rTil" type="number"></div>
+      <div class="field"><label>তাজবিদ</label><input id="rTaj" type="number"></div>
+      <button class="btn btn-primary" onclick="addResult()">➕ যোগ করুন (নির্বাচিত বিভাগে)</button>`;
+  }
+  html += '</div>'; c.innerHTML = html;
+}
+async function loadResult(dept){
+  const box = document.getElementById("resultBody");
+  if(!dept){ box.innerHTML = '<div style="text-align:center;padding:20px;">বিভাগ নির্বাচন করুন</div>'; return; }
+  const {data} = await sb.from("results").select("*").eq("department",dept);
+  const rows = (data||[]).map(r=>({...r,total:r.tilawat+r.tajbid})).sort((a,b)=>b.total-a.total);
+  let html = '<table><tr><th>নাম</th><th>তিলাওয়াত</th><th>তাজবিদ</th><th>মোট</th><th>স্থান</th></tr>';
+  rows.forEach((r,i)=>{ html+=`<tr><td>${esc(r.student_name)}</td><td>${r.tilawat}</td><td>${r.tajbid}</td><td>${r.total}</td><td>${i+1}</td></tr>`; });
+  html += '</table>';
+  box.innerHTML = html;
+}
+async function addResult(){
+  const dept = document.getElementById("resDept").value; if(!dept) return alert("আগে বিভাগ নির্বাচন করুন");
+  const student_name=document.getElementById("rName").value.trim();
+  const tilawat=parseInt(document.getElementById("rTil").value)||0;
+  const tajbid=parseInt(document.getElementById("rTaj").value)||0;
+  if(!student_name) return;
+  await sb.from("results").insert({department:dept,student_name,tilawat,tajbid});
+  loadResult(dept);
+}
+
+async function renderAdmission(c){
+  if(profile.role==="admin"){
+    const {data} = await sb.from("admissions").select("*").eq("status","pending");
+    let html='<div class="panel">';
+    (data||[]).forEach(a=>{
+      html+=`<div class="item-row"><div>${esc(a.student_name)} — ${esc(a.jamat)}</div>
+        <button class="btn" onclick="approveAdm(${a.id})">Approve</button></div>`;
+    });
+    html+='</div>'; c.innerHTML=html; return;
+  }
+  c.innerHTML = `<div class="panel">
+    <div class="section-h">ছাত্রের তথ্য</div>
+    <div class="field"><label>ছাত্রের পূর্ণ নাম</label><input id="fStudent"></div>
+    <div class="field"><label>বয়স</label><input id="fAge" type="number"></div>
+    <div class="field"><label>পাসপোর্ট সাইজের ছবি</label><input id="fPhoto" type="file" accept="image/*"></div>
+    <div class="field"><label>জন্ম নিবন্ধন সনদ</label><input id="fBirth" type="file" accept="image/*"></div>
+    <div class="section-h">পিতার তথ্য ও ঠিকানা</div>
+    <div class="field"><label>পিতার নাম</label><input id="fFather"></div>
+    <div class="field"><label>গ্রাম</label><input id="fVillage"></div>
+    <div class="field"><label>উপজেলা/থানা</label><input id="fUpazila"></div>
+    <div class="field"><label>জেলা</label><input id="fDistrict"></div>
+    <div class="field"><label>অভিভাবকের মোবাইল</label><input id="fPhone"></div>
+    <div class="field"><label>কোন জামাতে পড়তে ইচ্ছুক</label><input id="fJamat"></div>
+    <button class="btn btn-primary" style="width:100%;" onclick="submitAdmission()">✅ আবেদন জমা দিন</button>
+    <div class="msg" id="admMsg"></div>
+  </div>`;
+}
+async function uploadFile(inputId, prefix){
+  const f = document.getElementById(inputId).files[0]; if(!f) return null;
+  const path = `${prefix}_${Date.now()}_${f.name}`;
+  const {error} = await sb.storage.from("admission-docs").upload(path, f);
+  if(error){ msg2(error.message); return null; }
+  return sb.storage.from("admission-docs").getPublicUrl(path).data.publicUrl;
+}
+function msg2(t){ document.getElementById("admMsg").textContent = t; }
+async function submitAdmission(){
+  msg2("জমা হচ্ছে...");
+  const {data:{user}} = await sb.auth.getUser();
+  const passport_photo_url = await uploadFile("fPhoto","passport");
+  const birth_cert_url = await uploadFile("fBirth","birth");
+  const payload = {
+    student_name: document.getElementById("fStudent").value.trim(),
+    age: parseInt(document.getElementById("fAge").value)||null,
+    father_name: document.getElementById("fFather").value.trim(),
+    village: document.getElementById("fVillage").value.trim(),
+    upazila: document.getElementById("fUpazila").value.trim(),
+    district: document.getElementById("fDistrict").value.trim(),
+    guardian_phone: document.getElementById("fPhone").value.trim(),
+    jamat: document.getElementById("fJamat").value.trim(),
+    passport_photo_url, birth_cert_url, created_by:user.id
+  };
+  const {error} = await sb.from("admissions").insert(payload);
+  msg2(error ? error.message : "আবেদন সফলভাবে জমা হয়েছে ✅");
+}
+async function approveAdm(id){ await sb.from("admissions").update({status:"approved"}).eq("id",id); render(); }
+</script>
+</body>
+</html>
