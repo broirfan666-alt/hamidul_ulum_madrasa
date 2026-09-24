@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>হামিদুল উলূম মাদ্রাসা</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{--bg1:#a9b98a;--bg2:#c3cf9f;--text:#141414;--card:rgba(255,255,255,0.1);--accent:#2f8fe0;}
 *{box-sizing:border-box;}
@@ -68,7 +67,13 @@ th,td{border:1px solid rgba(0,0,0,0.3);padding:6px 3px;text-align:center;}
 </div>
 
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
+if(typeof supabase === "undefined"){
+  document.getElementById("authMsg").textContent = "ইন্টারনেট কানেকশন চেক করুন — প্রয়োজনীয় লাইব্রেরি লোড হয়নি।";
+  document.getElementById("authMsg").style.color = "#a00";
+  throw new Error("supabase-js CDN load failed");
+}
 const sb = supabase.createClient(
   "https://viebdkvcnrhlogoghlnc.supabase.co",
   "sb_publishable_RFgqh8KpqTamA1ozPy0Maw_k3X2jZg3"
