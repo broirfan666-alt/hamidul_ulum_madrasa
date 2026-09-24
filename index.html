@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>হামিদুল উলূম মাদ্রাসা</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+
+<div id="authScreen" class="overlay">
+  <div class="modal glass">
+    <div style="font-size:40px;text-align:center;">🕌</div>
+    <h2 style="text-align:center;margin:6px 0;">হামিদুল উলূম মাদ্রাসা</h2>
+    <div class="field"><label>ইমেইল</label><input id="authEmail" type="email"></div>
+    <div class="field"><label>পাসওয়ার্ড</label><input id="authPass" type="password"></div>
+    <div class="field"><label>পূর্ণ নাম (শুধু নতুন আইডির জন্য)</label><input id="authName" type="text"></div>
+    <button class="btn btn-primary" style="width:100%;" onclick="doSignIn()">লগইন করুন</button>
+    <button class="btn" style="width:100%;margin-top:8px;" onclick="doSignUp()">নতুন আইডি তৈরি করুন</button>
+    <div class="msg" id="authMsg"></div>
+  </div>
+</div>
+
+<div class="phone glass" id="app" style="display:none;">
+  <div class="toolbar">
+    <div class="avatar glass" id="roleBadge">🕌</div>
+    <div class="brand glass">হামিদুল উলূম মাদ্রাসা</div>
+    <div class="iconbtn glass" onclick="doSignOut()">🚪</div>
+  </div>
+  <button class="backbtn" id="backBtn" style="display:none;" onclick="goHome()">←</button>
+  <div class="title-pill glass" id="titlePill">হোম</div>
+  <div id="content">লোড হচ্ছে...</div>
+</div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
